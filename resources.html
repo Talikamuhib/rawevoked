@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resources · Raw → Evoked</title>
+<meta name="description" content="A curated, growing list of everything I use to learn neuroscience and EEG — books, video courses, tools, datasets, and free documentation, one by one.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;450;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #12100e;
+    --ink-soft:   #4a453f;
+    --ink-faint:  #8a8178;
+    --paper:      #f2ede3;
+    --paper-2:    #eae3d5;
+    --line:       #d8cfbe;
+    --line-soft:  #e2dacb;
+    --trace:      #b8482e;
+    --trace-dim:  rgba(184, 72, 46, 0.16);
+    --tag-book:   #2f6d5b;
+    --tag-video:  #6b4a9e;
+    --tag-tool:   #b8482e;
+    --tag-free:   #7a6a1e;
+    --radius:     3px;
+    --wrap:       860px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:       #eae3d5;
+      --ink-soft:  #b0a89b;
+      --ink-faint: #7d756a;
+      --paper:     #14120f;
+      --paper-2:   #1c1915;
+      --line:      #2f2a23;
+      --line-soft: #241f1a;
+      --trace:     #e0674a;
+      --trace-dim: rgba(224, 103, 74, 0.14);
+      --tag-book:  #5cb79c;
+      --tag-video: #a98fd6;
+      --tag-tool:  #e0674a;
+      --tag-free:  #cbb85f;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 28px; }
+
+  .topbar { border-bottom: 1px solid var(--line); background: var(--paper); position: sticky; top: 0; z-index: 10; }
+  .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .brand { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; letter-spacing: -0.2px; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  .brand .arrow { color: var(--trace); }
+  .nav { display: flex; gap: 26px; }
+  .nav a { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; color: var(--ink-soft); text-decoration: none; transition: color .15s; }
+  .nav a:hover { color: var(--trace); }
+  .nav a::before { content: "› "; color: var(--ink-faint); }
+
+  .hero { padding: 56px 0 20px; }
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
+  h1.title { font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -1px; margin-bottom: 18px; }
+  h1.title em { font-style: italic; color: var(--trace); }
+  .lede { font-size: 18px; line-height: 1.55; color: var(--ink-soft); max-width: 600px; }
+
+  .wave-band { padding: 26px 0 6px; overflow: hidden; }
+  .wave-band svg { width: 100%; height: 54px; display: block; }
+  .trace-path { fill: none; stroke: var(--trace); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: draw 3s ease-out .3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .trace-path { animation: none; stroke-dashoffset: 0; } }
+
+  /* jump nav */
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .jump a { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-soft); text-decoration: none; padding: 5px 12px; border: 1px solid var(--line); border-radius: 20px; transition: all .15s; }
+  .jump a:hover { color: var(--trace); border-color: var(--trace); }
+
+  /* section head */
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin: 52px 0 4px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
+  .sec-head .idx { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--trace); font-weight: 500; }
+  .sec-head h2 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 24px; letter-spacing: -0.3px; }
+  .sec-intro { font-size: 15.5px; color: var(--ink-soft); margin: 16px 0 6px; max-width: 62ch; }
+
+  /* resource item */
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; padding: 20px 6px; border-bottom: 1px solid var(--line-soft); transition: background .15s, padding-left .15s; }
+  .item:hover { background: var(--paper-2); padding-left: 12px; }
+  .item .body h3 { font-family: 'Newsreader', serif; font-weight: 500; font-size: 20px; line-height: 1.2; margin-bottom: 3px; }
+  .item .body h3 a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--trace-dim); transition: border-color .15s; }
+  .item .body h3 a:hover { border-color: var(--trace); }
+  .item .body .by { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-faint); margin-bottom: 7px; }
+  .item .body .note { font-size: 15px; color: var(--ink-soft); line-height: 1.5; max-width: 54ch; }
+  .item .body .note b { font-weight: 500; color: var(--ink); }
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .3px; padding: 3px 10px; border-radius: 20px; white-space: nowrap; align-self: start; margin-top: 4px; border: 1px solid currentColor; }
+  .tag.book  { color: var(--tag-book); }
+  .tag.video { color: var(--tag-video); }
+  .tag.tool  { color: var(--tag-tool); }
+  .tag.free  { color: var(--tag-free); }
+
+  .level { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-faint); border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; margin-left: 8px; vertical-align: 1px; }
+
+  .callout { border-left: 2px solid var(--trace); border-radius: 0; padding: 14px 0 14px 18px; margin: 22px 0 8px; font-size: 15.5px; color: var(--ink-soft); background: transparent; }
+  .callout b { color: var(--ink); font-weight: 500; }
+
+  footer { margin-top: 64px; border-top: 1px solid var(--line); padding: 28px 0 60px; display: flex; flex-wrap: wrap; gap: 16px 30px; align-items: center; justify-content: space-between; }
+  footer .sig { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-faint); }
+  footer .links { display: flex; gap: 22px; }
+  footer .links a { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-soft); text-decoration: none; }
+  footer .links a:hover { color: var(--trace); }
+
+  @media (max-width: 620px) {
+    .nav a:not(.nav-key) { display: none; }
+    .item { grid-template-columns: 1fr; gap: 8px; }
+    .tag { justify-self: start; margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="index.html">raw <span class="arrow">→</span> evoked</a>
+    <nav class="nav">
+      <a href="index.html#logs">logs</a>
+      <a href="resources.html" class="nav-key">resources</a>
+      <a href="index.html#about">about</a>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">brain@cortex:~$ ls ./resources --all</div>
+    <h1 class="title">Everything I'm learning <em>from</em>.</h1>
+    <p class="lede">A living, honest list of the books, courses, tools, and free resources I actually use to teach myself neuroscience and EEG. Ordered roughly beginner → advanced. I add to it as I go.</p>
+  </section>
+
+  <section class="wave-band" aria-hidden="true">
+    <svg viewBox="0 0 1000 54" preserveAspectRatio="none" role="img" aria-label="EEG trace divider">
+      <path class="trace-path" d="M0 27 H80 L92 27 L100 10 L108 44 L116 27 H180 L196 27 L204 18 L212 36 L220 27 H300 L314 27 L322 8 L330 46 L338 27 H420 L434 27 L442 20 L450 34 L458 27 H540 L556 27 L564 12 L572 42 L580 27 H660 L674 27 L682 21 L690 33 L698 27 H780 L794 27 L802 10 L810 44 L818 27 H900 L914 27 L922 19 L930 35 L938 27 H1000" />
+    </svg>
+  </section>
+
+  <div class="jump">
+    <a href="#start">where to start</a>
+    <a href="#books">books</a>
+    <a href="#video">video + courses</a>
+    <a href="#tools">tools</a>
+    <a href="#docs">free docs</a>
+    <a href="#data">datasets</a>
+  </div>
+
+  <div class="callout">
+    <b>How to read this page.</b> Each entry has a tag — <span style="color:var(--tag-book)">book</span>, <span style="color:var(--tag-video)">video</span>, <span style="color:var(--tag-tool)">tool</span>, <span style="color:var(--tag-free)">free</span> — and a level. You do not need all of it. Start with one book and one course, and come back here when you hit something you don't understand.
+  </div>
+
+  <!-- ============ START ============ -->
+  <section id="start">
+    <div class="sec-head"><span class="idx">00</span><h2>Where to start</h2></div>
+    <p class="sec-intro">If you're brand new, ignore everything below except these three. One book to read slowly, one course to follow along with, one tool to install. That's a complete starting kit.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mitpress.mit.edu/9780262525855/an-introduction-to-the-event-related-potential-technique/">An Introduction to the Event-Related Potential Technique</a> <span class="level">beginner</span></h3>
+        <div class="by">Steven J. Luck · MIT Press (2nd ed., 2014)</div>
+        <p class="note">The gentlest serious entry point. Explains <b>why</b> EEG/ERP works, in plain language, before any heavy math. If you buy one book, buy this one.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mne.tools/stable/auto_tutorials/index.html">MNE-Python official tutorials</a> <span class="level">beginner</span></h3>
+        <div class="by">MNE-Python contributors · free, online</div>
+        <p class="note">Narrative, in-order tutorials that take you from loading data to evoked responses, each with runnable code. <b>Free and constantly updated.</b> This is the software you'll actually use.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mne.tools/stable/index.html">MNE-Python</a> <span class="level">tool</span></h3>
+        <div class="by">open-source Python package</div>
+        <p class="note">Install this and you can follow along with every tutorial on this site. The whole ecosystem (Autoreject, PyPREP) plugs into it.</p>
+      </div>
+      <span class="tag tool">tool</span>
+    </div>
+  </section>
+
+  <!-- ============ BOOKS ============ -->
+  <section id="books">
+    <div class="sec-head"><span class="idx">01</span><h2>Books</h2></div>
+    <p class="sec-intro">The canon. These are the books working researchers actually cite and recommend. Read Luck first, then reach for Cohen when you want the mathematics of the analysis.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mitpress.mit.edu/9780262525855/an-introduction-to-the-event-related-potential-technique/">An Introduction to the Event-Related Potential Technique</a> <span class="level">beginner</span></h3>
+        <div class="by">Steven J. Luck · MIT Press</div>
+        <p class="note">The standard first book on ERPs. Conceptual, readable, and honest about the field's pitfalls. Start here.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mitpress.mit.edu/9780262319560/analyzing-neural-time-series-data/">Analyzing Neural Time Series Data: Theory and Practice</a> <span class="level">intermediate</span></h3>
+        <div class="by">Mike X Cohen · MIT Press (2014)</div>
+        <p class="note">The definitive guide to the <b>math and code</b> of EEG analysis — time, time-frequency, and synchronization methods — written to be understood without heavy formal math training. Every method comes with code. The book most people call their EEG bible.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://global.oup.com/academic/product/the-oxford-handbook-of-event-related-potential-components-9780195374148">The Oxford Handbook of ERP Components</a> <span class="level">reference</span></h3>
+        <div class="by">Steven J. Luck &amp; Emily S. Kappenman (Eds.) · Oxford</div>
+        <p class="note">A reference, not a read-through. When you meet a specific component (P300, N170, MMN) and want the definitive summary, look it up here.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://global.oup.com/academic/product/electric-fields-of-the-brain-9780195050387">Electric Fields of the Brain: The Neurophysics of EEG</a> <span class="level">advanced</span></h3>
+        <div class="by">Paul L. Nunez &amp; Ramesh Srinivasan · Oxford</div>
+        <p class="note">The deep physics of where the EEG signal comes from — volume conduction, source localization, the biophysics. Reach for it when you want to understand the signal at its root. Some physics background helps.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://global.oup.com/academic/product/rhythms-of-the-brain-9780199828234">Rhythms of the Brain</a> <span class="level">context</span></h3>
+        <div class="by">György Buzsáki · Oxford</div>
+        <p class="note">Not an analysis manual — the big-picture story of <b>why the brain oscillates at all</b>. Read it for intuition about what alpha, theta, and gamma actually mean.</p>
+      </div>
+      <span class="tag book">book</span>
+    </div>
+  </section>
+
+  <!-- ============ VIDEO ============ -->
+  <section id="video">
+    <div class="sec-head"><span class="idx">02</span><h2>Video + courses</h2></div>
+    <p class="sec-intro">For when reading isn't enough and you want someone to walk you through it. Mike X Cohen is the name to know — over 100 hours of free lectures that pair directly with his book.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://www.youtube.com/channel/UCUR_LsXk7IYyueSnXcNextQ">Mike X Cohen — YouTube channel</a> <span class="level">beginner → advanced</span></h3>
+        <div class="by">free video lectures</div>
+        <p class="note">Lectures on time series analysis, the Fourier transform, and EEG methods — many are excerpts from full courses and map onto <i>Analyzing Neural Time Series Data</i> chapter by chapter. <b>Start here for video.</b></p>
+      </div>
+      <span class="tag video">video</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://www.fieldtriptoolbox.org/video/">FieldTrip video lectures</a> <span class="level">intermediate</span></h3>
+        <div class="by">Donders / SCCN workshop recordings · free</div>
+        <p class="note">Full workshop recordings covering oscillations, source modelling, connectivity, and non-parametric statistics — including a Cohen lecture series. Dense but excellent.</p>
+      </div>
+      <span class="tag video">video</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://www.youtube.com/playlist?list=PLXtvZiGkmNVvPS0N9UNBVkIFe0_0t_Nqt">MNE-Python video tutorials</a> <span class="level">beginner</span></h3>
+        <div class="by">community playlists · free</div>
+        <p class="note">Screen-recorded walk-throughs of the MNE pipeline. Good to watch alongside the official written tutorials when a step doesn't click from text alone.</p>
+      </div>
+      <span class="tag video">video</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://www.udemy.com/course/eegerp-analysis-with-python-and-mne-an-introductory-course/">EEG/ERP Analysis with Python and MNE</a> <span class="level">beginner</span></h3>
+        <div class="by">Udemy · paid (often discounted)</div>
+        <p class="note">A structured, hands-on intro course: install Python, preprocess in MNE, run ICA, do frequency and ERP analysis. Good if you want one guided path start to finish and don't mind paying.</p>
+      </div>
+      <span class="tag video">video</span>
+    </div>
+  </section>
+
+  <!-- ============ TOOLS ============ -->
+  <section id="tools">
+    <div class="sec-head"><span class="idx">03</span><h2>Tools</h2></div>
+    <p class="sec-intro">The software. You can do everything on this site with the first one; the rest are things you'll meet as you go deeper or read other people's papers.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mne.tools/stable/index.html">MNE-Python</a> <span class="level">primary</span></h3>
+        <div class="by">Python · open source</div>
+        <p class="note">The tool this whole site is built around. Loading, filtering, ICA, epoching, spectra, source estimation — all in one well-documented package.</p>
+      </div>
+      <span class="tag tool">tool</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://autoreject.github.io/">Autoreject</a> <span class="level">add-on</span></h3>
+        <div class="by">Python · works with MNE</div>
+        <p class="note">Automatically learns per-channel rejection thresholds instead of you guessing one. The modern way to clean epochs. (Covered in tutorial 5.)</p>
+      </div>
+      <span class="tag tool">tool</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://eeglab.org/">EEGLAB</a> <span class="level">alternative</span></h3>
+        <div class="by">MATLAB · open source</div>
+        <p class="note">The big MATLAB toolbox. You don't need it if you're in Python, but half the literature and many tutorials use it, so it helps to recognise it.</p>
+      </div>
+      <span class="tag tool">tool</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://www.fieldtriptoolbox.org/">FieldTrip</a> <span class="level">alternative</span></h3>
+        <div class="by">MATLAB · open source</div>
+        <p class="note">The other major MATLAB toolbox, strong on connectivity and source analysis. Same note as EEGLAB — good to know it exists.</p>
+      </div>
+      <span class="tag tool">tool</span>
+    </div>
+  </section>
+
+  <!-- ============ DOCS ============ -->
+  <section id="docs">
+    <div class="sec-head"><span class="idx">04</span><h2>Free docs + guides</h2></div>
+    <p class="sec-intro">Everything here is free and online. When a concept on this site is fuzzy, one of these usually has the clearest explanation.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mne.tools/stable/auto_tutorials/index.html">MNE-Python tutorials + glossary</a> <span class="level">essential</span></h3>
+        <div class="by">mne.tools · free</div>
+        <p class="note">The single most useful free resource. In-order tutorials with real code and expected output, plus a glossary that defines the jargon.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://neurodesk.org/">Neurodesk</a> <span class="level">handy</span></h3>
+        <div class="by">browser-based analysis environment · free</div>
+        <p class="note">A ready-made neuroimaging environment you can run in the browser with datasets mounted — useful when you don't want to fight a local install.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://github.com/alexenge/intro-to-eeg">intro-to-eeg course</a> <span class="level">beginner</span></h3>
+        <div class="by">Alexander Enge · GitHub · free</div>
+        <p class="note">An open, self-contained EEG-analysis course in Python and MNE. No prior Python required — a great structured companion to work through.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mikexcohen.com/">mikexcohen.com</a> <span class="level">deep</span></h3>
+        <div class="by">Mike X Cohen · free lectures + book TOC</div>
+        <p class="note">His site collects the free lectures, code, and workshop materials in one place. Bookmark it for when you want to go deep on a method.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+  </section>
+
+  <!-- ============ DATA ============ -->
+  <section id="data">
+    <div class="sec-head"><span class="idx">05</span><h2>Datasets</h2></div>
+    <p class="sec-intro">Where the data on this site comes from. All public, all free. The first two you can download from inside Python with one line.</p>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://physionet.org/content/eegmmidb/1.0.0/">EEG Motor Movement/Imagery (EEGBCI)</a> <span class="level">beginner</span></h3>
+        <div class="by">PhysioNet · 109 subjects, 64 ch, 160 Hz</div>
+        <p class="note">The dataset behind the alpha-waves tutorial. Includes eyes-open / eyes-closed baselines and motor-imagery runs. MNE downloads it for you.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://mne.tools/stable/documentation/datasets.html">MNE built-in datasets (sample, SSVEP, ERP CORE)</a> <span class="level">beginner</span></h3>
+        <div class="by">mne.tools · one-line download</div>
+        <p class="note">Small, clean example datasets built into MNE — perfect for learning a method before pointing it at bigger data. ERP CORE is purpose-built for classic ERP components.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+
+    <div class="item">
+      <div class="body">
+        <h3><a href="https://openneuro.org/search/modality/eeg">OpenNeuro — EEG datasets</a> <span class="level">all levels</span></h3>
+        <div class="by">openneuro.org · BIDS format</div>
+        <p class="note">Hundreds of public EEG datasets in the standard BIDS layout — oddball, resting-state, food-word, and more. Where to go when you want real, varied data to practise on.</p>
+      </div>
+      <span class="tag free">free</span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <span class="sig">raw → evoked · resources · updated as I learn</span>
+  <div class="links">
+    <a href="index.html">home</a>
+    <a href="https://github.com/talikamuhib/rawevoked">github</a>
+  </div>
+</footer>
+
+</body>
+</html>
