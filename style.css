@@ -1,0 +1,70 @@
+:root {
+  --bg: #0f0f0f;
+  --fg: #e8e8e8;
+  --muted: #888;
+  --accent: #d64545;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Courier New", monospace;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+}
+
+.site-header,
+.content,
+.site-footer {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  letter-spacing: 0.1em;
+}
+
+.tagline {
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+}
+
+.log-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.log-list li {
+  border-bottom: 1px solid #222;
+  padding: 0.5rem 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.site-footer {
+  border-top: 1px solid #222;
+  color: var(--muted);
+}
+
+.social a {
+  margin-right: 1rem;
+}
+
+.copyright {
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
