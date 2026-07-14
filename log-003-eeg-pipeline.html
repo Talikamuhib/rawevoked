@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>log_003 · The EEG pipeline, and why preprocessing exists · Raw → Evoked</title>
+<meta name="description" content="Part 1 of the tutorial series. We run the whole EEG preprocessing pipeline once, end to end, on eyes-open vs eyes-closed data — and watch alpha waves appear.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;450;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#12100e; --ink-soft:#4a453f; --ink-faint:#8a8178;
+    --paper:#f2ede3; --paper-2:#eae3d5; --line:#d8cfbe; --line-soft:#e2dacb;
+    --trace:#b8482e; --trace-dim:rgba(184,72,46,0.16);
+    --tag-tut:#2f6d5b;
+    --code-bg:#ece5d6; --code-ink:#3a352d;
+    --radius:3px; --wrap:760px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#eae3d5; --ink-soft:#b0a89b; --ink-faint:#7d756a;
+      --paper:#14120f; --paper-2:#1c1915; --line:#2f2a23; --line-soft:#241f1a;
+      --trace:#e0674a; --trace-dim:rgba(224,103,74,0.14);
+      --tag-tut:#5cb79c;
+      --code-bg:#1c1915; --code-ink:#c9c1b2;
+    }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; font-size:18px; line-height:1.7; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .wrap { max-width:var(--wrap); margin:0 auto; padding:0 28px; }
+
+  .topbar { border-bottom:1px solid var(--line); background:var(--paper); position:sticky; top:0; z-index:10; }
+  .topbar-inner { display:flex; align-items:center; justify-content:space-between; height:58px; max-width:var(--wrap); margin:0 auto; padding:0 28px; }
+  .brand { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; letter-spacing:-0.2px; color:var(--ink); text-decoration:none; }
+  .brand .arrow { color:var(--trace); }
+  .nav { display:flex; gap:26px; }
+  .nav a { font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:var(--ink-soft); text-decoration:none; transition:color .15s; }
+  .nav a:hover { color:var(--trace); }
+  .nav a::before { content:"› "; color:var(--ink-faint); }
+
+  article { padding:52px 0 0; }
+  .post-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-faint); margin-bottom:22px; }
+  .tag { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3px; padding:3px 10px; border-radius:20px; border:1px solid var(--tag-tut); color:var(--tag-tut); }
+  .series { color:var(--ink-faint); }
+
+  h1 { font-family:'Newsreader',Georgia,serif; font-weight:500; font-size:clamp(32px,5.5vw,46px); line-height:1.1; letter-spacing:-0.8px; margin-bottom:20px; }
+  .standfirst { font-family:'Newsreader',serif; font-size:21px; line-height:1.5; color:var(--ink-soft); font-style:italic; margin-bottom:6px; }
+
+  .wave-band { padding:28px 0 10px; overflow:hidden; }
+  .wave-band svg { width:100%; height:48px; display:block; }
+  .trace-path { fill:none; stroke:var(--trace); stroke-width:1.6; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:2000; stroke-dashoffset:2000; animation:draw 2.8s ease-out .3s forwards; }
+  @keyframes draw { to { stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion:reduce) { .trace-path { animation:none; stroke-dashoffset:0; } }
+
+  article h2 { font-family:'Newsreader',serif; font-weight:500; font-size:28px; letter-spacing:-0.3px; margin:48px 0 4px; padding-top:20px; border-top:1px solid var(--line); }
+  article h2 .step-n { font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--trace); margin-right:10px; vertical-align:3px; }
+  article h3 { font-family:'Newsreader',serif; font-weight:600; font-size:20px; margin:32px 0 2px; }
+  article p { margin:16px 0; }
+  article p a, article li a { color:var(--trace); text-decoration:none; border-bottom:1px solid var(--trace-dim); }
+  article p a:hover, article li a:hover { border-color:var(--trace); }
+  article ul { margin:16px 0 16px 4px; padding:0; list-style:none; }
+  article li { position:relative; padding-left:24px; margin:10px 0; }
+  article li::before { content:"→"; position:absolute; left:0; color:var(--trace); }
+  strong { font-weight:500; }
+
+  .key { border-left:2px solid var(--trace); border-radius:0; padding:4px 0 4px 22px; margin:26px 0; }
+  .key .label { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--trace); margin-bottom:6px; }
+  .key p { margin:0; font-family:'Newsreader',serif; font-size:20px; font-style:italic; line-height:1.5; color:var(--ink); }
+
+  .why { background:var(--paper-2); border-radius:12px; padding:18px 22px; margin:22px 0; }
+  .why .label { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .why p { margin:6px 0 0; font-size:16.5px; color:var(--ink-soft); }
+  .why p:first-of-type { margin-top:0; }
+
+  pre { background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:16px 18px; overflow-x:auto; margin:20px 0; }
+  code { font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--code-ink); line-height:1.6; }
+  p code, li code { background:var(--code-bg); padding:1px 6px; border-radius:4px; font-size:14px; }
+  pre code { background:none; padding:0; }
+
+  figure { margin:28px 0; }
+  .figph { border:1px dashed var(--line); border-radius:12px; background:var(--paper-2); aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:24px; }
+  .figph .ic { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); letter-spacing:.5px; }
+  .figph .fn { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--trace); }
+  figcaption { font-size:14.5px; color:var(--ink-faint); margin-top:10px; line-height:1.5; }
+  figure img { width:100%; border-radius:12px; border:1px solid var(--line); display:block; }
+
+  .callout-run { display:flex; flex-wrap:wrap; align-items:center; gap:14px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin:30px 0; }
+  .callout-run .txt { flex:1; min-width:200px; font-size:15.5px; color:var(--ink-soft); }
+  .callout-run a { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--paper); background:var(--trace); padding:9px 16px; border-radius:var(--radius); text-decoration:none; white-space:nowrap; }
+
+  .next { margin:48px 0 0; padding:24px 0 0; border-top:1px solid var(--line); }
+  .next .label { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); letter-spacing:.5px; }
+  .next a { font-family:'Newsreader',serif; font-size:22px; color:var(--ink); text-decoration:none; display:inline-block; margin-top:6px; border-bottom:1px solid var(--trace-dim); }
+  .next a:hover { border-color:var(--trace); }
+
+  footer { margin-top:56px; border-top:1px solid var(--line); padding:28px 0 60px; display:flex; flex-wrap:wrap; gap:16px 30px; align-items:center; justify-content:space-between; }
+  footer .sig { font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-faint); }
+  footer .links { display:flex; gap:22px; }
+  footer .links a { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft); text-decoration:none; }
+  footer .links a:hover { color:var(--trace); }
+
+  @media (max-width:620px) { .nav a:not(.nav-key) { display:none; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">raw <span class="arrow">→</span> evoked</a>
+    <nav class="nav">
+      <a href="index.html#logs">logs</a>
+      <a href="resources.html">resources</a>
+      <a href="index.html#about" class="nav-key">about</a>
+    </nav>
+  </div>
+</div>
+
+<article class="wrap">
+
+  <div class="post-meta">
+    <span class="tag">tutorial</span>
+    <span>log_003</span>
+    <span>·</span>
+    <span>2026·06·11</span>
+    <span class="series">· series: preprocessing, part 1 of 5</span>
+  </div>
+
+  <h1>The EEG pipeline, and why preprocessing exists</h1>
+  <p class="standfirst">We run the whole thing once, end to end, on real data — and watch alpha waves appear the moment I close my eyes.</p>
+
+  <div class="wave-band" aria-hidden="true">
+    <svg viewBox="0 0 1000 48" preserveAspectRatio="none" role="img" aria-label="EEG trace">
+      <path class="trace-path" d="M0 24 H90 L102 24 L110 8 L118 40 L126 24 H210 L226 24 L234 16 L242 32 L250 24 H340 L354 24 L362 6 L370 42 L378 24 H470 L484 24 L492 18 L500 30 L508 24 H600 L616 24 L624 10 L632 38 L640 24 H730 L744 24 L752 19 L760 29 L768 24 H860 L874 24 L882 8 L890 40 L898 24 H1000" />
+    </svg>
+  </div>
+
+  <div class="key">
+    <div class="label">The one idea</div>
+    <p>EEG is a tiny brain signal buried under mountains of non-brain noise. Preprocessing isn't tidying up — it's the fight to pull microvolts of real neural activity out from under millivolts of junk sitting on top of it.</p>
+  </div>
+
+  <p>Every step below exists to remove <strong>one specific kind of contamination</strong> without damaging the real signal underneath. Once you hold that idea, each step stops being a mystery and becomes an obvious answer to the same question: <em>what garbage am I removing, and why?</em></p>
+
+  <p>To make it concrete, we use the classic <strong>eyes-open vs. eyes-closed</strong> experiment. When you close your eyes, neurons in the occipital lobe — the visual area, at the back of your head — synchronise at around 10 Hz, producing <strong>alpha waves</strong>. Open your eyes and they collapse. Our goal is to make that alpha spike appear in a plot. The data comes from the public <a href="resources.html#data">PhysioNet EEGBCI dataset</a>, and <a href="https://mne.tools/stable/index.html">MNE-Python</a> downloads it for us — no files to hunt down.</p>
+
+  <div class="callout-run">
+    <span class="txt">Want to run it yourself while you read? The full annotated notebook is on GitHub — every code block below is in there, with the plots generated live.</span>
+    <a href="https://github.com/talikamuhib/rawevoked">open the notebook ↗</a>
+  </div>
+
+  <h2><span class="step-n">01</span>Load the data, and set the montage</h2>
+
+  <div class="why">
+    <div class="label">what we do</div>
+    <p>Download two baseline runs for one subject — run 1 (eyes open) and run 2 (eyes closed) — then tell MNE where each electrode sat on the head.</p>
+    <div class="label" style="margin-top:14px">why it matters</div>
+    <p>An EEG number is meaningless until you know <em>where</em> it was recorded. The montage maps channel names like <code>O1</code> and <code>Cz</code> to physical scalp positions using the standard 10-20 system. Without it you can't make a head-map or interpret anything spatially. Think of the channel names as a coordinate system, not just labels.</p>
+  </div>
+
+  <pre><code>raw_fnames = mne.datasets.eegbci.load_data(subjects=1, runs=[1, 2])
+raw_open   = mne.io.read_raw_edf(raw_fnames[0], preload=True)
+raw_closed = mne.io.read_raw_edf(raw_fnames[1], preload=True)
+
+for raw in (raw_open, raw_closed):
+    mne.datasets.eegbci.standardize(raw)   # clean channel names
+    raw.set_montage("standard_1005")       # give every channel a 3D location</code></pre>
+
+  <figure>
+    <div class="figph">
+      <div class="ic">[ figure ]</div>
+      <div class="fn">raw-eeg-eyes-closed.png</div>
+    </div>
+    <figcaption>The raw signal before any cleaning. This is the messy start — slow drift, noise, and somewhere in there, brain activity. Drop your exported plot here.</figcaption>
+  </figure>
+
+  <h2><span class="step-n">02</span>Re-reference</h2>
+
+  <div class="why">
+    <div class="label">what we do</div>
+    <p>Re-reference to the <strong>average</strong> of all channels.</p>
+    <div class="label" style="margin-top:14px">why it matters</div>
+    <p>Every EEG voltage is a <em>difference</em> between the recording electrode and a reference point — there's no such thing as absolute brain voltage, only voltage relative to somewhere. If that somewhere is noisy, the noise leaks into every channel. The average reference uses the mean of all electrodes as a cleaner, more neutral baseline.</p>
+  </div>
+
+  <pre><code>for raw in (raw_open, raw_closed):
+    raw.set_eeg_reference("average", projection=False)</code></pre>
+
+  <p>There are other choices here — linked mastoids, REST, single-electrode — and which one you pick depends mostly on how many electrodes you have. That's the whole of the <a href="#">next tutorial</a>. For a 64-channel set like this, the average is a sensible default.</p>
+
+  <h2><span class="step-n">03</span>Filter</h2>
+
+  <div class="why">
+    <div class="label">what we do</div>
+    <p>Apply a <strong>band-pass</strong> filter keeping roughly 1–40 Hz.</p>
+    <div class="label" style="margin-top:14px">why it matters</div>
+    <p>Three problems, handled at once: below ~1 Hz is slow drift from sweat and settling electrodes (removed by the high-pass edge); above ~40 Hz is fast muscle noise (removed by the low-pass edge); and our target, alpha at 8–12 Hz, sits comfortably inside the band we keep.</p>
+  </div>
+
+  <pre><code>for raw in (raw_open, raw_closed):
+    raw.filter(l_freq=1.0, h_freq=40.0)</code></pre>
+
+  <div class="key">
+    <div class="label">the danger to respect</div>
+    <p>Filters have side effects. Too aggressive a high-pass can distort the very signal shapes you're trying to measure. The craft isn't "apply filter" — it's removing the noise band without eating the signal band next to it.</p>
+  </div>
+
+  <p>I'm skipping a dedicated notch filter here for simplicity; the 40 Hz low-pass already suppresses 50/60 Hz line noise. In a country with strong mains hum you'd add <code>raw.notch_filter(50)</code> — or <code>60</code> in the Americas.</p>
+
+  <figure>
+    <div class="figph">
+      <div class="ic">[ figure ]</div>
+      <div class="fn">filtered-eeg-eyes-closed.png</div>
+    </div>
+    <figcaption>The same data after filtering. Notice how much flatter and cleaner the baseline is compared to the raw trace above — the drift and fast noise are gone.</figcaption>
+  </figure>
+
+  <h2><span class="step-n">04</span>A note on ICA — and why I skip it this time</h2>
+
+  <p>The full pipeline includes <strong>ICA</strong> to remove eye-blinks and heartbeat — it un-mixes the recording into independent sources so you can delete just the bad ones. It's the centrepiece of a <a href="#">later tutorial</a>.</p>
+
+  <p>But here's an honest teaching moment: <strong>the alpha effect is so strong it survives minimal cleaning.</strong> For this first pass I skip ICA and still get a clear result. Re-running <em>with</em> ICA later and showing the plot get even cleaner makes a great follow-up — the contrast teaches more than either version alone. So: note that ICA belongs <em>here</em> in the order (after filtering, before epoching), and move on.</p>
+
+  <h2><span class="step-n">05</span>The payoff — compute the power spectrum</h2>
+
+  <div class="why">
+    <div class="label">what we do</div>
+    <p>Compute the power at each frequency for both conditions, focused on the occipital channels (<code>O1</code>, <code>O2</code>, <code>Oz</code>).</p>
+    <div class="label" style="margin-top:14px">why occipital</div>
+    <p>Alpha is generated in the visual cortex at the back of the head. Looking at frontal channels would dilute the effect. Knowing <em>where</em> to look is half the analysis — and it's why we bothered with the montage in step 1.</p>
+  </div>
+
+  <pre><code>occipital = ["O1", "O2", "Oz"]
+psd_open   = raw_open.compute_psd(method="welch", fmin=1, fmax=40, picks=occipital)
+psd_closed = raw_closed.compute_psd(method="welch", fmin=1, fmax=40, picks=occipital)</code></pre>
+
+  <p>Now the moment of truth. If the physiology is real and the pipeline is sound, the eyes-closed curve should spike sharply around 10 Hz while the eyes-open curve stays flat there.</p>
+
+  <figure>
+    <div class="figph">
+      <div class="ic">[ figure — the hero ]</div>
+      <div class="fn">alpha-spectrum-open-vs-closed.png</div>
+    </div>
+    <figcaption>Occipital power, eyes open vs. eyes closed. The bump in the eyes-closed curve inside the shaded 8–12 Hz band is the alpha rhythm — your visual cortex synchronising when it has nothing to look at.</figcaption>
+  </figure>
+
+  <p>That is the entire point: a real, physiological brain signal, pulled cleanly out of the noise by a pipeline you now understand step by step.</p>
+
+  <h2><span class="step-n">06</span>Where on the head is the alpha?</h2>
+
+  <p>A spectrum proves alpha is <em>there</em>. A <strong>topographic map</strong> proves it's in the <em>right place</em> — the back of the head. We compute alpha-band power across all channels and paint it onto a head seen from above.</p>
+
+  <figure>
+    <div class="figph">
+      <div class="ic">[ figure ]</div>
+      <div class="fn">alpha-topomap.png</div>
+    </div>
+    <figcaption>Alpha power across the scalp, eyes closed. The hotspot lands at the back of the head — exactly where the occipital lobe sits. If it glowed at the front, you'd suspect an eye artifact. The fact that it's at the back is the physiology confirming the pipeline worked.</figcaption>
+  </figure>
+
+  <h2><span class="step-n">07</span>What we learned</h2>
+
+  <p>Walking the pipeline once, the shape of it:</p>
+  <ul>
+    <li><strong>Load + montage</strong> — give every electrode a position, or nothing spatial works.</li>
+    <li><strong>Re-reference</strong> — voltage is always relative; choose a neutral baseline.</li>
+    <li><strong>Filter</strong> — remove drift, muscle, and line noise without eating the signal.</li>
+    <li><strong>(ICA)</strong> — un-mix and remove blinks and heartbeat; skippable when the effect is strong.</li>
+    <li><strong>Analyse</strong> — go where the signal lives and let spectral estimation reveal what's invisible in the raw trace.</li>
+  </ul>
+
+  <div class="key">
+    <div class="label">two ideas to carry forward</div>
+    <p>Order isn't arbitrary — each step assumes the last one ran. And every step is a trade-off, never free. Good preprocessing isn't running the most steps; it's knowing the minimum needed and what each one costs.</p>
+  </div>
+
+  <div class="next">
+    <div class="label">next in the series →</div>
+    <a href="#">Every EEG reference, and when to use each</a>
+    <p style="font-size:16px; color:var(--ink-soft); margin-top:8px;">We take this exact data, apply average / linked-mastoid / REST references, and put the head-maps side by side to <em>see</em> how the choice changes the result.</p>
+  </div>
+
+</article>
+
+<footer class="wrap">
+  <span class="sig">raw → evoked · open source, built in the open</span>
+  <div class="links">
+    <a href="index.html">home</a>
+    <a href="resources.html">resources</a>
+    <a href="https://github.com/talikamuhib/rawevoked">github</a>
+  </div>
+</footer>
+
+</body>
+</html>
