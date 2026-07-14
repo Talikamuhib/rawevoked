@@ -1,38 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>rawevoked</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raw → Evoked · learning neuroscience in public</title>
+<meta name="description" content="A public lab notebook. Learning EEG, fMRI, and neural signal analysis in the open — one log entry at a time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;450;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #12100e;
+    --ink-soft:   #4a453f;
+    --ink-faint:  #8a8178;
+    --paper:      #f2ede3;
+    --paper-2:    #eae3d5;
+    --line:       #d8cfbe;
+    --line-soft:  #e2dacb;
+    --trace:      #b8482e;
+    --trace-dim:  rgba(184, 72, 46, 0.16);
+    --tag-tut:    #2f6d5b;
+    --tag-exp:    #6b4a9e;
+    --tag-proj:   #b8482e;
+    --radius:     3px;
+    --wrap:       860px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:       #eae3d5;
+      --ink-soft:  #b0a89b;
+      --ink-faint: #7d756a;
+      --paper:     #14120f;
+      --paper-2:   #1c1915;
+      --line:      #2f2a23;
+      --line-soft: #241f1a;
+      --trace:     #e0674a;
+      --trace-dim: rgba(224, 103, 74, 0.14);
+      --tag-tut:   #5cb79c;
+      --tag-exp:   #a98fd6;
+      --tag-proj:  #e0674a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 28px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 58px;
+  }
+  .brand {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.2px;
+    color: var(--ink); text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .brand .arrow { color: var(--trace); }
+  .nav { display: flex; gap: 26px; }
+  .nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px; color: var(--ink-soft); text-decoration: none;
+    transition: color .15s;
+  }
+  .nav a:hover { color: var(--trace); }
+  .nav a::before { content: "› "; color: var(--ink-faint); }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 62px 0 26px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 22px;
+  }
+  .eyebrow .cursor {
+    display: inline-block; width: 8px; height: 15px;
+    background: var(--trace); margin-left: 3px; vertical-align: -2px;
+    animation: blink 1.15s steps(1) infinite;
+  }
+  @keyframes blink { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+  h1.title {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 400; font-size: clamp(38px, 7vw, 68px);
+    line-height: 1.02; letter-spacing: -1.2px; color: var(--ink);
+    margin-bottom: 20px;
+  }
+  h1.title em { font-style: italic; color: var(--trace); }
+  .lede {
+    font-size: 19px; line-height: 1.55; color: var(--ink-soft);
+    max-width: 560px; margin-bottom: 4px;
+  }
+
+  /* ---------- waveform ---------- */
+  .wave-band { padding: 30px 0 8px; overflow: hidden; }
+  .wave-band svg { width: 100%; height: 78px; display: block; }
+  .trace-path {
+    fill: none; stroke: var(--trace); stroke-width: 1.6;
+    stroke-linejoin: round; stroke-linecap: round;
+    stroke-dasharray: 2400; stroke-dashoffset: 2400;
+    animation: draw 3.4s ease-out .3s forwards;
+  }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .wave-caption {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; color: var(--ink-faint);
+    display: flex; justify-content: space-between; margin-top: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .trace-path { animation: none; stroke-dashoffset: 0; }
+    .eyebrow .cursor { animation: none; }
+  }
+
+  /* ---------- section head ---------- */
+  .sec-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin: 54px 0 6px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sec-head .idx {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px; color: var(--trace); font-weight: 500;
+  }
+  .sec-head h2 {
+    font-family: 'Newsreader', serif; font-weight: 500;
+    font-size: 25px; letter-spacing: -0.3px;
+  }
+  .sec-head .meta {
+    margin-left: auto; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--ink-faint);
+  }
+
+  /* ---------- log entries ---------- */
+  .log { border-bottom: 1px solid var(--line-soft); }
+  .log a.entry {
+    display: grid; grid-template-columns: 96px 1fr auto;
+    gap: 22px; align-items: start;
+    padding: 22px 6px; text-decoration: none; color: inherit;
+    transition: background .15s, padding-left .15s;
+  }
+  .log a.entry:hover { background: var(--paper-2); padding-left: 14px; }
+  .entry .stamp {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--ink-faint); line-height: 1.5; padding-top: 3px;
+  }
+  .entry .stamp .id { color: var(--trace); display: block; font-weight: 500; }
+  .entry .body h3 {
+    font-family: 'Newsreader', serif; font-weight: 500;
+    font-size: 21px; line-height: 1.2; letter-spacing: -0.2px;
+    margin-bottom: 6px;
+  }
+  .entry .body .hyp {
+    font-size: 15px; color: var(--ink-soft); line-height: 1.5;
+    max-width: 46ch;
+  }
+  .entry .body .hyp b { font-weight: 500; color: var(--ink); }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: .3px; padding: 3px 10px; border-radius: 20px;
+    white-space: nowrap; align-self: start; margin-top: 4px;
+    border: 1px solid currentColor;
+  }
+  .tag.tut  { color: var(--tag-tut); }
+  .tag.exp  { color: var(--tag-exp); }
+  .tag.proj { color: var(--tag-proj); }
+
+  /* ---------- pipeline strip ---------- */
+  .pipe {
+    display: flex; flex-wrap: wrap; gap: 10px 8px; align-items: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    color: var(--ink-soft); margin: 20px 0 8px;
+  }
+  .pipe .node {
+    padding: 6px 13px; border: 1px solid var(--line);
+    border-radius: var(--radius); background: var(--paper-2);
+    white-space: nowrap;
+  }
+  .pipe .node.first { color: var(--ink-faint); }
+  .pipe .node.last  { color: var(--trace); border-color: var(--trace); }
+  .pipe .sep { color: var(--trace); }
+
+  /* ---------- about ---------- */
+  .about p {
+    font-size: 17px; color: var(--ink-soft); line-height: 1.65;
+    max-width: 60ch; margin-top: 18px;
+  }
+  .about p b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin-top: 68px; border-top: 1px solid var(--line);
+    padding: 30px 0 60px;
+    display: flex; flex-wrap: wrap; gap: 16px 30px;
+    align-items: center; justify-content: space-between;
+  }
+  footer .sig {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    color: var(--ink-faint);
+  }
+  footer .links { display: flex; gap: 22px; }
+  footer .links a {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    color: var(--ink-soft); text-decoration: none;
+  }
+  footer .links a:hover { color: var(--trace); }
+
+  @media (max-width: 620px) {
+    .nav a:not(.nav-key) { display: none; }
+    .log a.entry { grid-template-columns: 1fr; gap: 8px; }
+    .entry .stamp { display: flex; gap: 10px; padding-top: 0; }
+    .tag { margin-top: 0; justify-self: start; }
+    .sec-head .meta { display: none; }
+  }
+</style>
 </head>
 <body>
-  <header class="site-header">
-    <h1>rawevoked</h1>
-    <p class="tagline">a raw log of things worth remembering</p>
-  </header>
 
-  <main class="content">
-    <section class="log-list">
-      <h2>Latest entries</h2>
-      <ul>
-        <!-- Internal links use relative paths (no leading slash) so they work at /rawevoked/ -->
-        <li><a href="posts/log-007.html">log-007</a></li>
-        <li><a href="posts/log-006.html">log-006</a></li>
-        <li><a href="posts/log-005.html">log-005</a></li>
-      </ul>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <nav class="social">
-      <a href="https://github.com/talikamuhib/rawevoked">github</a>
-      <!-- TODO: replace with your actual Instagram profile URL -->
-      <a href="https://instagram.com/YOUR_USERNAME">instagram</a>
-      <!-- TODO: add RSS feed URL once the feed exists -->
-      <a href="#">rss</a>
+<div class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#top">raw <span class="arrow">→</span> evoked</a>
+    <nav class="nav">
+      <a href="#logs">logs</a>
+      <a href="#pipeline">pipeline</a>
+      <a href="#about" class="nav-key">about</a>
     </nav>
-    <p class="copyright">&copy; 2026 rawevoked</p>
-  </footer>
+  </div>
+</div>
+
+<main class="wrap" id="top">
+
+  <section class="hero">
+    <div class="eyebrow">brain@cortex:~$ cat mission.txt<span class="cursor"></span></div>
+    <h1 class="title">From <em>raw</em> signal<br>to <em>evoked</em> understanding.</h1>
+    <p class="lede">A public lab notebook. I'm learning to read the brain — EEG, fMRI, and the messy signals in between — and writing down every experiment as I go.</p>
+  </section>
+
+  <section class="wave-band" aria-hidden="true">
+    <svg viewBox="0 0 1000 78" preserveAspectRatio="none" role="img" aria-label="Simulated EEG trace">
+      <path class="trace-path" d="M0 39 H70 L82 39 L92 15 L102 63 L112 39 H150 L168 39 L176 27 L184 51 L192 39 H235 L250 39 L262 10 L274 68 L286 39 H330 L345 39 L353 30 L361 46 L369 39 H410 L428 39 L438 18 L448 60 L458 39 H500 L515 39 L523 33 L531 45 L539 39 H580 L596 39 L606 13 L616 65 L626 39 H670 L685 39 L693 28 L701 50 L709 39 H750 L766 39 L776 22 L786 56 L796 39 H840 L854 39 L862 32 L870 46 L878 39 H920 L935 39 L943 20 L951 58 L959 39 H1000" />
+    </svg>
+    <div class="wave-caption"><span>ch. Cz — resting state</span><span>256 Hz · notch 50 Hz</span></div>
+  </section>
+
+  <section id="logs">
+    <div class="sec-head">
+      <span class="idx">01</span>
+      <h2>Recent logs</h2>
+      <span class="meta">newest first</span>
+    </div>
+
+    <div class="log">
+      <a class="entry" href="#">
+        <span class="stamp"><span class="id">log_007</span>2026·07·12</span>
+        <span class="body">
+          <h3>Decoding left vs. right hand imagery</h3>
+          <span class="hyp"><b>Hypothesis:</b> the motor cortex mu-rhythm should separate the two intentions. <b>Result:</b> 71% accuracy on held-out trials.</span>
+        </span>
+        <span class="tag proj">project</span>
+      </a>
+    </div>
+
+    <div class="log">
+      <a class="entry" href="#">
+        <span class="stamp"><span class="id">log_006</span>2026·07·05</span>
+        <span class="body">
+          <h3>I watched my own alpha waves appear</h3>
+          <span class="hyp"><b>Method:</b> eyes-open vs. eyes-closed, band power in 8–12 Hz. The spike when I closed my eyes was the most satisfying plot I've made.</span>
+        </span>
+        <span class="tag exp">experiment</span>
+      </a>
+    </div>
+
+    <div class="log">
+      <a class="entry" href="#">
+        <span class="stamp"><span class="id">log_005</span>2026·06·28</span>
+        <span class="body">
+          <h3>Cleaning EEG with ICA, step by step</h3>
+          <span class="hyp"><b>Goal:</b> teach the pipeline to ignore my eye-blinks and heartbeat without throwing away real signal.</span>
+        </span>
+        <span class="tag tut">tutorial</span>
+      </a>
+    </div>
+
+    <div class="log">
+      <a class="entry" href="#">
+        <span class="stamp"><span class="id">log_004</span>2026·06·19</span>
+        <span class="body">
+          <h3>Filtering: drift, muscle, and the 50 Hz hum</h3>
+          <span class="hyp"><b>Goal:</b> understand what each filter removes — and what it quietly destroys if you're careless.</span>
+        </span>
+        <span class="tag tut">tutorial</span>
+      </a>
+    </div>
+
+    <div class="log">
+      <a class="entry" href="#">
+        <span class="stamp"><span class="id">log_003</span>2026·06·11</span>
+        <span class="body">
+          <h3>Loading messy data with MNE-Python</h3>
+          <span class="hyp"><b>Goal:</b> make sense of the BIDS layout and get one raw trace on screen without crying.</span>
+        </span>
+        <span class="tag tut">tutorial</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="pipeline">
+    <div class="sec-head">
+      <span class="idx">02</span>
+      <h2>Why "Raw → Evoked"</h2>
+    </div>
+    <p class="lede" style="font-size:17px;margin-top:20px;max-width:60ch;">It's the actual journey EEG data takes inside MNE-Python — and, honestly, the journey I'm on too. Noisy and shapeless at the start; clear signal by the end.</p>
+    <div class="pipe">
+      <span class="node first">Raw</span>
+      <span class="sep">→</span>
+      <span class="node">Filtered</span>
+      <span class="sep">→</span>
+      <span class="node">ICA-cleaned</span>
+      <span class="sep">→</span>
+      <span class="node">Epochs</span>
+      <span class="sep">→</span>
+      <span class="node last">Evoked</span>
+    </div>
+  </section>
+
+  <section id="about" class="about">
+    <div class="sec-head">
+      <span class="idx">03</span>
+      <h2>About this notebook</h2>
+    </div>
+    <p>I'm learning neuroscience the hard way — <b>in public</b>, by doing. Every tutorial here is me figuring out a step of the analysis pipeline; every experiment is me pointing those tools at real data and seeing what the brain gives back.</p>
+    <p>Everything is <b>open source and free</b>. The write-ups, the notebooks, the mistakes. If it helps you learn too, that's the whole point. Fork it, break it, tell me where I'm wrong.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <span class="sig">raw → evoked · est. 2026 · built in the open</span>
+  <div class="links">
+    <a href="#">github</a>
+    <a href="#">rss</a>
+    <a href="#">instagram</a>
+  </div>
+</footer>
+
 </body>
 </html>
